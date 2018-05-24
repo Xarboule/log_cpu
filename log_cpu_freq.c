@@ -9,7 +9,7 @@
 
 extern int errno;
 
-int main(int argc, char** argv[]){
+int main(int argc, char * argv[]){
 	
 	if (argc != 2){
 		printf("Usage : %s command\n", argv[0]);
@@ -31,7 +31,7 @@ int main(int argc, char** argv[]){
 		
 		for (int i=0; i<nproc; i++){
 			char path[40];
-			char* number;
+			char number[10] = "";
 			sprintf(number, "%d", i);
 			strcpy(path, "/sys/devices/system/cpu/cpu");
 			strcat(path, number);
@@ -77,16 +77,25 @@ int main(int argc, char** argv[]){
 			
 			if(test == EOF){
 				errnum = errno;
-				fprintf(stderr, "Error opening log file : %s\n", strerror(errnum));
+				fprintf(stderr, "Error writing into log file : %s\n", strerror(errnum));
 				exit(EXIT_FAILURE);
 			}
 			fclose(log_file);
 		}
 	}
 	else { // Processus d'execution de l'application
-		printf("Beginning the application %s ...\n", argv[1][0]);
-		
-		int status = system(argv[1][0]);
+		printf("Beginning the application %s ...\n", argv[1]);
+	
+		int errnum;
+
+		int status = system(argv[1]);
+
+		if (status == -1){
+			errnum = errno;
+			fprintf(stderr, "Error executing the command : %S\n", strerror(errnum));
+			kill(pid, SIGKILL);
+			exit(EXIT_SUCCESS);
+		}
 
 		//sleep(10);
 		kill(pid, SIGKILL);
