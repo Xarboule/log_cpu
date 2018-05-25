@@ -1,2 +1,4 @@
 log_cpu
 *.csv
+*.o
+results/*
