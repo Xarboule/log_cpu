@@ -89,8 +89,8 @@ int main(int argc, char * argv[]){
 			printf("Measure !\n");
 			//MSR measure for uncore freq
 			uint64_t cur_uncore_clk = read_msr(0, 0x395);
-			previous_uncore_clk = cur_uncore_clk;
 			uncore_freq = (cur_uncore_clk - previous_uncore_clk)/1000;
+			previous_uncore_clk = cur_uncore_clk;
 			printf("Uncore frequency : %" PRId64 "\n", uncore_freq);
 			char uncore_result[20] = "";
 			sprintf(uncore_result, "%" PRId64 ", ", uncore_freq);
