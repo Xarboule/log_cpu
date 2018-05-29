@@ -33,12 +33,12 @@ int main(int argc, char * argv[]){
 		exit(EXIT_FAILURE);
 		
 	}
-	write_msr(0,0x391,1<<29);
+	write_msr(1,0x391,1<<29);
 	if(status == -1 || WEXITSTATUS(status) != 0){
 		exit(EXIT_FAILURE);
 		
 	}
-	write_msr(0,0x394, 1<<22);
+	write_msr(1,0x394, 1<<22);
 	if(status == -1 || WEXITSTATUS(status) != 0){
 		exit(EXIT_FAILURE);
 		
@@ -81,13 +81,14 @@ int main(int argc, char * argv[]){
 
 		int64_t uncore_freq;
 
+		
+		uint64_t previous_uncore_clk = read_msr(1, 0x395);
+
 		while(42){ // Periodic measures
-			uint64_t previous_uncore_clk;
-			previous_uncore_clk = read_msr(0, 0x395);
-			uint64_t cur_uncore_clk = read_msr(0, 0x395);
 			clock_t cl = clock();
 			usleep(1000000);
 			clock_t cl2 = clock();
+			uint64_t cur_uncore_clk = read_msr(1, 0x395);
 			previous_uncore_clk &= ((1uL<<48)-1);
 			
 			char result[100] = "";
