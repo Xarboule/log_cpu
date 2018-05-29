@@ -1,4 +1,5 @@
 #include <stdio.h>
+# pragma GCC optimize("O0")
 #include <stdlib.h>
 #include <sys/sysinfo.h>
 #include <sys/types.h>
@@ -8,6 +9,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "msr_utils.h"
 
@@ -31,14 +33,13 @@ int main(int argc, char * argv[]){
 		exit(EXIT_FAILURE);
 		
 	}
-	//printf("WEXITSTATUS = %d\n", status);
-	status = system("wrmsr 0x391 0x20000000");
+	write_msr(0,0x391,1<<29);
 	if(status == -1 || WEXITSTATUS(status) != 0){
 		exit(EXIT_FAILURE);
 		
 	}
-	//printf("WEXITSTATUS = %d\n", status);
-	if(system("wrmsr 0x394 0x400000") != 0){
+	write_msr(0,0x394, 1<<22);
+	if(status == -1 || WEXITSTATUS(status) != 0){
 		exit(EXIT_FAILURE);
 		
 	}
@@ -56,12 +57,12 @@ int main(int argc, char * argv[]){
 		int errnum;
 		FILE* proc_freq_files[nproc];
 		
-		int uncore_freq_file = open("/dev/cpu/0/msr", O_RDONLY);
-		if(uncore_freq_file == -1){
+		//int uncore_freq_file = open("/dev/cpu/0/msr", O_RDONLY);
+		/*if(uncore_freq_file == -1){
 			errnum = errno;
 			fprintf(stderr, "Error opening msr file : %s\n", strerror(errnum));
 			exit(EXIT_FAILURE);
-		}
+		}*/
 
 
 		for (int i=0; i<nproc; i++){
@@ -78,22 +79,27 @@ int main(int argc, char * argv[]){
 		printf("Beginning logs of CPU infos\n");
 		int cur_measure;
 
-		uint64_t uncore_freq;
+		int64_t uncore_freq;
 
 		while(42){ // Periodic measures
-			static uint64_t previous_uncore_clk;
+			uint64_t previous_uncore_clk;
 			previous_uncore_clk = read_msr(0, 0x395);
-			sleep(1);
+			uint64_t cur_uncore_clk = read_msr(0, 0x395);
+			clock_t cl = clock();
+			usleep(1000000);
+			clock_t cl2 = clock();
+			previous_uncore_clk &= ((1uL<<48)-1);
+			
 			char result[100] = "";
 			
 			printf("Measure !\n");
 			//MSR measure for uncore freq
-			uint64_t cur_uncore_clk = read_msr(0, 0x395);
-			uncore_freq = (cur_uncore_clk - previous_uncore_clk)/1000;
+		       	cur_uncore_clk &= ((1uL<<48)-1);
+			uncore_freq = (cur_uncore_clk - previous_uncore_clk)*CLOCKS_PER_SEC/(cl2-cl)/1000;
+			printf("Uncore Frequency: %li\n", uncore_freq);
 			previous_uncore_clk = cur_uncore_clk;
-			printf("Uncore frequency : %" PRId64 "\n", uncore_freq);
 			char uncore_result[20] = "";
-			sprintf(uncore_result, "%" PRId64 ", ", uncore_freq);
+			sprintf(uncore_result, "%li, ", uncore_freq);
 			strcat(result, uncore_result);
 
 			for(int i=0; i<nproc; i++){
@@ -112,7 +118,6 @@ int main(int argc, char * argv[]){
 				}
 				strcat(result, atomic_result);
 			}
-			printf(result);
 			FILE* log_file = fopen("cpu_freq.csv", "a");
 			if(log_file == NULL){
 				errnum = errno;
@@ -128,7 +133,7 @@ int main(int argc, char * argv[]){
 				exit(EXIT_FAILURE);
 			}
 			fclose(log_file);
-			close(uncore_freq_file);
+			//close(uncore_freq_file);
 		}
 	}
 	else { // Application process 
