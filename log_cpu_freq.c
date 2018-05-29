@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/sysinfo.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
@@ -84,10 +85,12 @@ int main(int argc, char * argv[]){
 		
 		uint64_t previous_uncore_clk = read_msr(1, 0x395);
 
+		struct timespec res1, res2;
 		while(42){ // Periodic measures
-			clock_t cl = clock();
-			usleep(1000000);
-			clock_t cl2 = clock();
+			res2.tv_sec = 0;
+			clock_gettime(CLOCK_MONOTONIC, &res1);
+			sleep(1);
+			clock_gettime(CLOCK_MONOTONIC, &res2);
 			uint64_t cur_uncore_clk = read_msr(1, 0x395);
 			previous_uncore_clk &= ((1uL<<48)-1);
 			
@@ -96,7 +99,8 @@ int main(int argc, char * argv[]){
 			printf("Measure !\n");
 			//MSR measure for uncore freq
 		       	cur_uncore_clk &= ((1uL<<48)-1);
-			uncore_freq = (cur_uncore_clk - previous_uncore_clk)*CLOCKS_PER_SEC/(cl2-cl)/1000;
+			uint64_t elapsed = ((res2.tv_sec-res1.tv_sec)*1000000000 + (res2.tv_nsec - res1.tv_nsec))/1000000;
+			uncore_freq = (cur_uncore_clk - previous_uncore_clk)/elapsed; // KHz
 			printf("Uncore Frequency: %li\n", uncore_freq);
 			previous_uncore_clk = cur_uncore_clk;
 			char uncore_result[20] = "";

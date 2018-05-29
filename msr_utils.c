@@ -4,7 +4,7 @@
 #include <fcntl.h>
 
 
-extern int msr_dev;
+int msr_dev = 0;
 
 void write_msr(int core, long addr, uint64_t msr_val)
 {	

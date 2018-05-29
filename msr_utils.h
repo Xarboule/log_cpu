@@ -12,6 +12,5 @@ void write_msr(int core, long addr, uint64_t val);
 
 uint64_t read_msr(int core, long addr);
 
-static int msr_dev = 0;
-
+extern int msr_dev;
 #endif
