@@ -34,12 +34,12 @@ int main(int argc, char * argv[]){
 		exit(EXIT_FAILURE);
 		
 	}
-	write_msr(1,0x391,1<<29);
+	write_msr(0,0x391,1<<29);
 	if(status == -1 || WEXITSTATUS(status) != 0){
 		exit(EXIT_FAILURE);
 		
 	}
-	write_msr(1,0x394, 1<<22);
+	write_msr(0,0x394,1<<22);
 	if(status == -1 || WEXITSTATUS(status) != 0){
 		exit(EXIT_FAILURE);
 		
@@ -80,25 +80,26 @@ int main(int argc, char * argv[]){
 		printf("Beginning logs of CPU infos\n");
 		int cur_measure;
 
-		int64_t uncore_freq;
+		uint64_t uncore_freq;
 
 		
-		uint64_t previous_uncore_clk = read_msr(1, 0x395);
+		uint64_t previous_uncore_clk, cur_uncore_clk;
 
 		struct timespec res1, res2;
 		while(42){ // Periodic measures
 			res2.tv_sec = 0;
 			clock_gettime(CLOCK_MONOTONIC, &res1);
-			sleep(1);
+	       		previous_uncore_clk = read_msr(0, 0x395);
+			usleep(1000);	
+			cur_uncore_clk = read_msr(0, 0x395);
 			clock_gettime(CLOCK_MONOTONIC, &res2);
-			uint64_t cur_uncore_clk = read_msr(1, 0x395);
+			sleep(1);
 			previous_uncore_clk &= ((1uL<<48)-1);
+		       	cur_uncore_clk &= ((1uL<<48)-1);
 			
 			char result[100] = "";
-			
 			printf("Measure !\n");
 			//MSR measure for uncore freq
-		       	cur_uncore_clk &= ((1uL<<48)-1);
 			uint64_t elapsed = ((res2.tv_sec-res1.tv_sec)*1000000000 + (res2.tv_nsec - res1.tv_nsec))/1000000;
 			uncore_freq = (cur_uncore_clk - previous_uncore_clk)/elapsed; // KHz
 			printf("Uncore Frequency: %li\n", uncore_freq);
