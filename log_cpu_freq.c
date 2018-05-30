@@ -98,22 +98,57 @@ int main(int argc, char * argv[]){
 		int addr_msr_read = 0x395;
 #endif
 
+
+		//Writing the header line
+
+		char result_format[300] = "";
+		sprintf(result_format, "timestamp, ");
+		strcat(result_format, "Uncore, ");
+		for(int i=0; i<nproc; i++){
+			char atomic_format[20] = "";
+			if(i<nproc-1){
+				sprintf(atomic_format, "CPU%d, ", i);
+			}
+			else {
+				sprintf(atomic_format, "CPU%d\n", i);
+			}
+			strcat(result_format, atomic_format);
+		}
+
+
+		FILE* log_file = fopen("cpu_freq.csv", "a");
+		if(log_file == NULL){
+			errnum = errno;
+			fprintf(stderr, "Error opening log file : %s\n", strerror(errnum));
+			exit(EXIT_FAILURE);
+		}
+
+		int test = fputs(result_format, log_file);
+			
+		if(test == EOF){
+			errnum = errno;
+			fprintf(stderr, "Error writing into log file : %s\n", strerror(errnum));
+			exit(EXIT_FAILURE);
+		}
+		fclose(log_file);
+
+		//File ready for measures	
+		
 		int cur_measure;
 
 		uint64_t uncore_freq;
 
 		
 		uint64_t previous_uncore_clk, cur_uncore_clk;
-
 		struct timespec res1, res2;
 		while(42){ // Periodic measures
+			sleep(1);
 			res2.tv_sec = 0;
 			clock_gettime(CLOCK_MONOTONIC, &res1);
 			previous_uncore_clk = read_msr(0, addr_msr_read);
 			usleep(1000);	
 			cur_uncore_clk = read_msr(0, addr_msr_read);
 			clock_gettime(CLOCK_MONOTONIC, &res2);
-			sleep(1);
 			previous_uncore_clk &= ((1uL<<48)-1);
 		       	cur_uncore_clk &= ((1uL<<48)-1);
 			
@@ -124,6 +159,10 @@ int main(int argc, char * argv[]){
 			uncore_freq = (cur_uncore_clk - previous_uncore_clk)/elapsed; // KHz
 			printf("Uncore Frequency: %li\n", uncore_freq);
 			previous_uncore_clk = cur_uncore_clk;
+			
+			char timestamp[20] = "";
+			sprintf(timestamp, "%lu, ", (unsigned long)time(NULL));
+			strcat(result, timestamp);	
 			char uncore_result[20] = "";
 			sprintf(uncore_result, "%li, ", uncore_freq);
 			strcat(result, uncore_result);
