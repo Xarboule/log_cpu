@@ -14,7 +14,32 @@
 
 #include "msr_utils.h"
 
+//define XEON
+
 extern int errno;
+
+void write_msr_config(){
+
+	int status = system("modprobe msr");
+	if(status == -1 || WEXITSTATUS(status) != 0){
+		exit(EXIT_FAILURE);
+		
+	}
+	write_msr(0,0x391,1<<29);
+	write_msr(0,0x394,1<<22);
+}
+
+void write_msr_config_xeon(){
+
+	int status = system("modprobe msr");
+	if(status == -1 || WEXITSTATUS(status) != 0){
+		exit(EXIT_FAILURE);
+		
+	}
+	write_msr(0,0x703,1<<22);
+}
+
+
 
 int main(int argc, char * argv[]){
 	
@@ -28,23 +53,11 @@ int main(int argc, char * argv[]){
 
 	printf("Initializing MSR for uncore frequency reading...\n");
 
-
-	int status = system("modprobe msr");
-	if(status == -1 || WEXITSTATUS(status) != 0){
-		exit(EXIT_FAILURE);
-		
-	}
-	write_msr(0,0x391,1<<29);
-	if(status == -1 || WEXITSTATUS(status) != 0){
-		exit(EXIT_FAILURE);
-		
-	}
-	write_msr(0,0x394,1<<22);
-	if(status == -1 || WEXITSTATUS(status) != 0){
-		exit(EXIT_FAILURE);
-		
-	}
-
+#ifdef XEON
+	write_msr_config_xeon();
+#else
+	write_msr_config();
+#endif
 
 	//Fork
 
@@ -78,6 +91,13 @@ int main(int argc, char * argv[]){
 		}
 	
 		printf("Beginning logs of CPU infos\n");
+		
+#ifdef XEON
+		int addr_msr_read = 0x704;
+#else
+		int addr_msr_read = 0x395;
+#endif
+
 		int cur_measure;
 
 		uint64_t uncore_freq;
@@ -89,15 +109,15 @@ int main(int argc, char * argv[]){
 		while(42){ // Periodic measures
 			res2.tv_sec = 0;
 			clock_gettime(CLOCK_MONOTONIC, &res1);
-	       		previous_uncore_clk = read_msr(0, 0x395);
+			previous_uncore_clk = read_msr(0, addr_msr_read);
 			usleep(1000);	
-			cur_uncore_clk = read_msr(0, 0x395);
+			cur_uncore_clk = read_msr(0, addr_msr_read);
 			clock_gettime(CLOCK_MONOTONIC, &res2);
 			sleep(1);
 			previous_uncore_clk &= ((1uL<<48)-1);
 		       	cur_uncore_clk &= ((1uL<<48)-1);
 			
-			char result[100] = "";
+			char result[300] = "";
 			printf("Measure !\n");
 			//MSR measure for uncore freq
 			uint64_t elapsed = ((res2.tv_sec-res1.tv_sec)*1000000000 + (res2.tv_nsec - res1.tv_nsec))/1000000;
