@@ -158,7 +158,7 @@ int main(int argc, char * argv[]){
 			usleep(1000);	
 			cur_uncore_clk = read_msr(0, addr_msr_read);
 #ifdef XEON
-			cur_uncore_clk = read_msr(1, addr_msr_read);
+			cur_uncore_clk_1 = read_msr(1, addr_msr_read);
 #endif
 			clock_gettime(CLOCK_MONOTONIC, &res2);
 			previous_uncore_clk &= ((1uL<<48)-1);
