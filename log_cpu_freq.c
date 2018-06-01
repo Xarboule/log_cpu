@@ -107,6 +107,9 @@ int main(int argc, char * argv[]){
 		char result_format[300] = "";
 		sprintf(result_format, "timestamp, ");
 		strcat(result_format, "Uncore, ");
+#ifdef XEON
+		strcat(result_format, "Uncore1, ");
+#endif
 		for(int i=0; i<nproc; i++){
 			char atomic_format[20] = "";
 			if(i<nproc-1){
