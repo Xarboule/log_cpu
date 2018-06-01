@@ -37,7 +37,7 @@ void write_msr_config_xeon(){
 		
 	}
 	write_msr(0,0x703,1<<22); //First socket
-	write_msr(9,0x703,1<<22); //Second socket
+	write_msr(1,0x703,1<<22); //Second socket
 }
 
 
@@ -153,12 +153,12 @@ int main(int argc, char * argv[]){
 			clock_gettime(CLOCK_MONOTONIC, &res1);
 			previous_uncore_clk = read_msr(0, addr_msr_read);
 #ifdef XEON
-			previous_uncore_clk_1 = read_msr(8, addr_msr_read);
+			previous_uncore_clk_1 = read_msr(1, addr_msr_read);
 #endif
 			usleep(1000);	
 			cur_uncore_clk = read_msr(0, addr_msr_read);
 #ifdef XEON
-			cur_uncore_clk = read_msr(8, addr_msr_read);
+			cur_uncore_clk = read_msr(1, addr_msr_read);
 #endif
 			clock_gettime(CLOCK_MONOTONIC, &res2);
 			previous_uncore_clk &= ((1uL<<48)-1);
